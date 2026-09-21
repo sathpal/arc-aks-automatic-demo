@@ -8,6 +8,23 @@ screenshot of what each step prints, so you can compare your output with mine.
 
 No prior experience with Actions Runner Controller (ARC) or AKS Automatic is needed.
 
+## Quick start
+
+```bash
+gh repo fork sathpal/arc-aks-automatic-demo --clone && cd arc-aks-automatic-demo
+make tools                          # installs or upgrades the CLIs
+cp .env.example .env                # set GITHUB_OWNER to your GitHub user
+make check                          # tools, logins, .env: fix anything marked ✗
+make quota                          # request the vCPU quota AKS Automatic needs
+make cluster                        # 20 to 35 minutes
+make access && make arc             # RBAC + kubelogin, then the controller
+export GITHUB_TOKEN=$(gh auth token)
+make runners && make test           # runner scale set, then a workflow run you can watch
+make cleanup                        # delete everything
+```
+
+Each step is explained below with the output you should see.
+
 ## What you will end up with
 
 | | |
@@ -25,13 +42,14 @@ No prior experience with Actions Runner Controller (ARC) or AKS Automatic is nee
 
 - **A Mac or Linux machine with Homebrew.** `make tools` installs the CLIs.
 - **An Azure subscription** where you can create resource groups and request quota. Log in with `az login`.
-- **A GitHub account and a fork of this repo.** The runners register against a repository, and the validation workflow has to exist in that repository. Fork this repo, then clone your fork.
+- **A GitHub account and a fork of this repo.** The runners register against a repository, and the validation workflow has to exist in that repository. Fork this repo, then clone your fork. If you would rather use an existing repo of yours, copy `.github/workflows/arc-automatic-validation.yml` into it and set `GITHUB_REPO` in `.env`.
 - **A GitHub token.** For this lab, the token the GitHub CLI already holds is enough: `export GITHUB_TOKEN=$(gh auth token)`. It needs the `repo` scope. For anything shared, use a GitHub App instead.
 
 ```bash
 gh repo fork sathpal/arc-aks-automatic-demo --clone && cd arc-aks-automatic-demo
 make tools                      # azure-cli (upgraded), kubectl, helm, gh, kubelogin, az quota extension
 cp .env.example .env            # then set GITHUB_OWNER to your GitHub user, and LOCATION if you want
+make check                      # verifies all of the above before you spend any money
 ```
 
 Do **not** install the `aks-preview` Azure CLI extension. The `--sku automatic` flag is in the core CLI (2.80 and newer), and the preview extension broke every `az aks` command on the CLI version I started with.
@@ -121,7 +139,11 @@ The script then prints the run summary, the trimmed job log, and what Karpenter 
 
 ![kubectl get nodeclaims: the D4as_v6 Karpenter created; events show it marked as a consolidation candidate with the saving quoted, then a replacement node claim launching](docs/img/08-nap.png)
 
-On GitHub the run looks like any other: Actions tab, the workflow, a green `validate` job of 8 seconds.
+On GitHub it looks like any other run:
+
+![GitHub Actions run page: ARC AKS Automatic validation, Success, validate 8s](docs/img/10-github-run.png)
+
+![GitHub Actions tab listing the workflow runs](docs/img/12-github-actions.png)
 
 ## Step 7. Look around, then delete everything
 
@@ -201,7 +223,7 @@ Check that `runs-on` in the workflow equals `RUNNER_SET_NAME` in `.env`, that th
 ```
 .env.example          every name and setting; copy to .env
 Makefile              one target per step; each just runs a script
-scripts/              00-tools, 01-quota, 02-cluster, 03-access, 04-arc, 05-runners, 06-test, 07-status, 99-cleanup
+scripts/              check, 00-tools, 01-quota, 02-cluster, 03-access, 04-arc, 05-runners, 06-test, 07-status, 99-cleanup
 k8s/                  arc-controller-values.yaml, arc-runner-set-values.yaml
 .github/workflows/    arc-automatic-validation.yml, the job that proves it works
 docs/img/             the screenshots in this README

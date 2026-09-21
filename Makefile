@@ -1,4 +1,5 @@
-.PHONY: tools quota cluster access arc runners test status cleanup all
+.PHONY: check tools quota cluster access arc runners test status cleanup all
+check:    ; @scripts/check.sh
 tools:    ; @scripts/00-tools.sh
 quota:    ; @scripts/01-quota.sh
 cluster:  ; @scripts/02-cluster.sh
